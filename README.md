@@ -3,6 +3,8 @@
 
 <h2>🧐 Features</h2>
 
+The goal of this project was to design a HID controller for interfacing a number of buttons and encoders with the X-Plane flight simulator software.
+
 ![PCB 3d model](/Images/3dmodel.png)
 
 Here're some of the project's best features:
