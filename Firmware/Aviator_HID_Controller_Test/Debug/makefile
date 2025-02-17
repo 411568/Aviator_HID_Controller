@@ -88,8 +88,8 @@ all: main-build
 main-build: Aviator_HID_Controller.elf secondary-outputs
 
 # Tool invocations
-Aviator_HID_Controller.elf Aviator_HID_Controller.map: $(OBJS) $(USER_OBJS) C:\Users\krzys\STM32CubeIDE\workspace_1.16.1\Aviator_HID_Controller\STM32F072C8UX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Aviator_HID_Controller.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0 -T"C:\Users\krzys\STM32CubeIDE\workspace_1.16.1\Aviator_HID_Controller\STM32F072C8UX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Aviator_HID_Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Aviator_HID_Controller.elf Aviator_HID_Controller.map: $(OBJS) $(USER_OBJS) C:\Users\krzys\Documents\ELECTRONICS\AVIATOR\Aviator_HID_Controller\Firmware\Aviator_HID_Controller_Test\STM32F072C8UX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "Aviator_HID_Controller.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0 -T"C:\Users\krzys\Documents\ELECTRONICS\AVIATOR\Aviator_HID_Controller\Firmware\Aviator_HID_Controller_Test\STM32F072C8UX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Aviator_HID_Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

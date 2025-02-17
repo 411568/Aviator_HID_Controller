@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_hid.h"
 #include "keyboard_Report_Descriptor.h"
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEBOUNCE_DELAY_MS 100
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,6 +50,24 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
+typedef enum {
+    KEYCODE_A = 0x04,  // Button0
+    KEYCODE_B = 0x05,  // Button1
+    KEYCODE_C = 0x06,  // Button2
+    KEYCODE_D = 0x07,  // Button3
+    KEYCODE_E = 0x08,  // Button4
+    KEYCODE_F = 0x09,  // Button5
+    KEYCODE_G = 0x0A,  // Button6
+    KEYCODE_H = 0x0B,  // Button7
+    KEYCODE_I = 0x0C,  // Button8
+    KEYCODE_J = 0x0D,  // Button9
+    KEYCODE_K = 0x0E,  // Button10
+    KEYCODE_L = 0x0F,  // Button11
+    KEYCODE_NONE = 0x00 // No key
+} KeyCode;
+
+
+
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 typedef struct
@@ -64,6 +83,31 @@ typedef struct
 }subKeyBoard;
 
 subKeyBoard keyBoardHIDsub = {0,0,0,0,0,0,0,0};
+
+typedef struct 
+{
+    GPIO_TypeDef* port;
+    uint16_t pin;
+    uint8_t keycode;
+} ButtonConfig;
+
+
+ButtonConfig buttonConfigs[] = 
+{
+    {Button0_GPIO_Port, Button0_Pin, KEYCODE_A},
+    {Button1_GPIO_Port, Button1_Pin, KEYCODE_B},
+    {Button2_GPIO_Port, Button2_Pin, KEYCODE_C},
+    {Button3_GPIO_Port, Button3_Pin, KEYCODE_D},
+    {Button4_GPIO_Port, Button4_Pin, KEYCODE_E},
+    {Button5_GPIO_Port, Button5_Pin, KEYCODE_F},
+    {Button6_GPIO_Port, Button6_Pin, KEYCODE_G},
+    {Button7_GPIO_Port, Button7_Pin, KEYCODE_H},
+    {Button8_GPIO_Port, Button8_Pin, KEYCODE_I},
+    {Button9_GPIO_Port, Button9_Pin, KEYCODE_J},
+    {Button10_GPIO_Port, Button10_Pin, KEYCODE_K},
+    {Button11_GPIO_Port, Button11_Pin, KEYCODE_L}
+};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -127,54 +171,64 @@ int main(void)
   uint32_t Enc0 = TIM1->CNT;
   uint32_t Enc1 = TIM2->CNT;
   uint32_t Enc2 = TIM3->CNT;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  volatile uint16_t debounceDelay = DEBOUNCE_DELAY_MS; // Debounce delay in ms
+
   while (1)
   {
-	  if(TIM1->CNT > Enc0)
-	  {
-		  Enc0 = TIM1->CNT;
-		  keyBoardHIDsub.KEYCODE1=0x1E;  // Press 1 key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	  }
-	  if(TIM1->CNT < Enc0)
-	  {
-		  Enc0 = TIM1->CNT;
-		  keyBoardHIDsub.KEYCODE1=0x1F;  // Press 2 key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	  }
-	  if(TIM2->CNT > Enc1)
-	  {
-		  Enc1 = TIM2->CNT;
-		  keyBoardHIDsub.KEYCODE1=0x20;  // Press 3 key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	  }
-	  if(TIM2->CNT < Enc1)
-	  {
-		  Enc1 = TIM2->CNT;
-		  keyBoardHIDsub.KEYCODE1=0x21;  // Press 4 key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	  }
-	  if(TIM3->CNT > Enc2)
-	  {
-		  Enc2 = TIM3->CNT;
-		  keyBoardHIDsub.KEYCODE1=0x22;  // Press 5 key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	  }
-	  if(TIM3->CNT < Enc2)
-	  {
-		  Enc2 = TIM3->CNT;
-		  keyBoardHIDsub.KEYCODE1=0x23;  // Press 6 key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	  }
+    // Read encoder values and send corresponding key press
+    if(TIM1->CNT > Enc0)
+    {
+        Enc0 = TIM1->CNT;
+        keyBoardHIDsub.KEYCODE1 = 0x1E;  // Press 1 key
+        USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+    }
+    if(TIM1->CNT < Enc0)
+    {
+        Enc0 = TIM1->CNT;
+        keyBoardHIDsub.KEYCODE1 = 0x1F;  // Press 2 key
+        USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+    }
+    if(TIM2->CNT > Enc1)
+    {
+        Enc1 = TIM2->CNT;
+        keyBoardHIDsub.KEYCODE1 = 0x20;  // Press 3 key
+        USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+    }
+    if(TIM2->CNT < Enc1)
+    {
+        Enc1 = TIM2->CNT;
+        keyBoardHIDsub.KEYCODE1 = 0x21;  // Press 4 key
+        USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+    }
+    if(TIM3->CNT > Enc2)
+    {
+        Enc2 = TIM3->CNT;
+        keyBoardHIDsub.KEYCODE1 = 0x22;  // Press 5 key
+        USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+    }
+    if(TIM3->CNT < Enc2)
+    {
+        Enc2 = TIM3->CNT;
+        keyBoardHIDsub.KEYCODE1 = 0x23;  // Press 6 key
+        USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+    }
 
-	  HAL_Delay(50);
+    // Buttons
+
+    checkAndDebounceButtonPresses();
+
+    HAL_Delay(50); // Main loop delay
+  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+
   /* USER CODE END 3 */
 }
 
@@ -441,13 +495,13 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : Button0_Pin Button1_Pin Button2_Pin */
   GPIO_InitStruct.Pin = Button0_Pin|Button1_Pin|Button2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Button3_Pin Button4_Pin Button5_Pin */
   GPIO_InitStruct.Pin = Button3_Pin|Button4_Pin|Button5_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -455,7 +509,7 @@ static void MX_GPIO_Init(void)
                            Button10_Pin Button11_Pin */
   GPIO_InitStruct.Pin = Button6_Pin|Button7_Pin|Button8_Pin|Button9_Pin
                           |Button10_Pin|Button11_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -466,70 +520,30 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void checkAndDebounceButtonPresses()
 {
-	keyBoardHIDsub.MODIFIER=0x00;
-	switch(GPIO_Pin)
-	{
-	case Button0_Pin:
-		keyBoardHIDsub.KEYCODE1=0x04;  // Press a key
-		break;
-	case Button1_Pin:
-		keyBoardHIDsub.KEYCODE1=0x05;  // Press b key
-		break;
-	case Button2_Pin:
-		keyBoardHIDsub.KEYCODE1=0x06;  // Press c key
-		break;
-	case Button3_Pin:
-		keyBoardHIDsub.KEYCODE1=0x07;  // Press d key
-		break;
-	case Button4_Pin:
-		keyBoardHIDsub.KEYCODE1=0x08;  // Press e key
-		break;
-	case Button5_Pin:
-		keyBoardHIDsub.KEYCODE1=0x09;  // Press f key
-		break;
-	case Button6_Pin:
-		keyBoardHIDsub.KEYCODE1=0x0A;  // Press g key
-		break;
-	case Button7_Pin:
-		keyBoardHIDsub.KEYCODE1=0x0B;  // Press h key
-		break;
-	case Button8_Pin:
-		keyBoardHIDsub.KEYCODE1=0x0C;  // Press i key
-		break;
-	case Button9_Pin:
-		keyBoardHIDsub.KEYCODE1=0x0D;  // Press j key
-		break;
-	case Button10_Pin:
-		keyBoardHIDsub.KEYCODE1=0x0E;  // Press k key
-		break;
-	case Button11_Pin:
-		keyBoardHIDsub.KEYCODE1=0x0F;  // Press l key
-		break;
-	default:
-		keyBoardHIDsub.KEYCODE1=0x10;  // Press m key
-		break;
-	}
+    for (int i = 0; i < sizeof(buttonConfigs) / sizeof(buttonConfigs[0]); i++)
+    {
+        if (HAL_GPIO_ReadPin(buttonConfigs[i].port, buttonConfigs[i].pin) == GPIO_PIN_RESET)
+        {
+            HAL_Delay(DEBOUNCE_DELAY_MS); // Debounce delay
+            if (HAL_GPIO_ReadPin(buttonConfigs[i].port, buttonConfigs[i].pin) == GPIO_PIN_RESET)
+            {
+                keyBoardHIDsub.KEYCODE1 = buttonConfigs[i].keycode;
 
-	// Send the key press
-	USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
-	HAL_Delay(200);
+                // Send the key press
+                USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+                HAL_Delay(50);
+                keyBoardHIDsub.KEYCODE1 = KEYCODE_NONE;  // Release the key
+                USBD_HID_SendReport(&hUsbDeviceFS, &keyBoardHIDsub, sizeof(keyBoardHIDsub));
+            }
+        }
+    }
 }
 /* USER CODE END 4 */
 
